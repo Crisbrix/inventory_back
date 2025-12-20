@@ -15,6 +15,9 @@ const authRoutes = require('./routes/auth');
 
 // Rutas
 app.use('/api/auth', authRoutes);
+const demoRoles = require('./routes/demoRoles');
+app.use('/demo', demoRoles);
+
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
