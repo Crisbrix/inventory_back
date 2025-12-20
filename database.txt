@@ -1,0 +1,63 @@
+-- =========================================
+
+
+-- =========================================
+-- TABLA DE MOVIMIENTOS DE INVENTARIO
+-- =========================================
+CREATE TABLE movimientos_inventario (
+id INT AUTO_INCREMENT PRIMARY KEY,
+producto_id INT NOT NULL,
+tipo_movimiento ENUM('ENTRADA', 'SALIDA', 'AJUSTE') NOT NULL,
+cantidad INT NOT NULL,
+fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+observacion VARCHAR(200),
+FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+
+-- =========================================
+-- TABLA DE VENTAS
+-- =========================================
+CREATE TABLE ventas (
+id INT AUTO_INCREMENT PRIMARY KEY,
+usuario_id INT NOT NULL,
+fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+total DECIMAL(10,2),
+FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+
+-- =========================================
+-- DETALLE DE VENTAS
+-- =========================================
+CREATE TABLE venta_detalle (
+id INT AUTO_INCREMENT PRIMARY KEY,
+venta_id INT NOT NULL,
+producto_id INT NOT NULL,
+cantidad INT NOT NULL,
+precio DECIMAL(10,2),
+FOREIGN KEY (venta_id) REFERENCES ventas(id),
+FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+
+-- =========================================
+-- TABLA DE ALERTAS DE INVENTARIO
+-- =========================================
+CREATE TABLE alertas (
+id INT AUTO_INCREMENT PRIMARY KEY,
+producto_id INT NOT NULL,
+tipo VARCHAR(50),
+mensaje VARCHAR(200),
+fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+atendida BOOLEAN DEFAULT FALSE,
+FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+
+-- =========================================
+-- ÍNDICES RECOMENDADOS
+-- =========================================
+CREATE INDEX idx_producto_codigo ON productos(codigo);
+CREATE INDEX idx_movimientos_fecha ON movimientos_inventario(fecha);
+CREATE INDEX idx_ventas_fecha ON ventas(fecha);
