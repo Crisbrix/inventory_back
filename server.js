@@ -12,9 +12,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Importar rutas
 const authRoutes = require('./routes/auth');
+const productosRoutes = require('./routes/productos');
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/productos', productosRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
