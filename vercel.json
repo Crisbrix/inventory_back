@@ -1,14 +1,21 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/auth.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/auth.js": {
+      "runtime": "nodejs18.x"
     }
-  ],
+  },
   "routes": [
     {
-      "src": "/api/auth/(.*)",
+      "src": "/api/auth/register",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/api/auth/login", 
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/api/auth/health",
       "dest": "/api/auth.js"
     }
   ]
