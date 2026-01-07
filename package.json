@@ -2,9 +2,9 @@
   "name": "inventory-back",
   "version": "1.0.0",
   "description": "Backend API para sistema de inventario",
-  "type": "module",
   "scripts": {
-    "dev": "node api/auth.js"
+    "dev": "node server.js",
+    "start": "node server.js"
   },
   "keywords": ["inventory", "api", "nodejs"],
   "license": "ISC",

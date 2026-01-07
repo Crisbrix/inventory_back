@@ -42,13 +42,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Para Vercel: exportar la app en lugar de iniciar servidor
-if (process.env.NODE_ENV === 'production') {
-  module.exports = app;
-} else {
-  startServer();
-}
-
 // Iniciar servidor
 async function startServer() {
   // Probar conexión a la base de datos
@@ -76,4 +69,10 @@ async function startServer() {
   });
 }
 
-startServer();
+// Exportar app para pruebas o importaciones
+module.exports = app;
+
+// Solo iniciar el servidor cuando se ejecute directamente (entorno local)
+if (require.main === module) {
+  startServer();
+}
