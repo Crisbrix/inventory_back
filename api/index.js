@@ -5,7 +5,15 @@ const { testConnection } = require('../config/database');
 const app = express();
 
 // Middlewares
-app.use(cors());
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
+// Responder preflight de todos los endpoints
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

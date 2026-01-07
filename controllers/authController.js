@@ -95,10 +95,11 @@ const authController = {
 
   async register(req, res) {
     try {
-      const { nombre, correo, password } = req.body;
+      const { nombre, correo, email, password } = req.body;
+      const correoInput = correo || email; // aceptar ambos nombres de campo
 
       // Validar campos requeridos
-      if (!nombre || !correo || !password) {
+      if (!nombre || !correoInput || !password) {
         return res.status(400).json({
           success: false,
           message: 'Nombre, correo y contraseña son requeridos'
@@ -107,7 +108,7 @@ const authController = {
 
       // Validar formato de email básico
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(correo)) {
+      if (!emailRegex.test(correoInput)) {
         return res.status(400).json({
           success: false,
           message: 'Formato de correo inválido'
@@ -125,7 +126,7 @@ const authController = {
       // Verificar si el correo ya existe
       const [existingUser] = await query(
         'SELECT id FROM usuarios WHERE correo = ?',
-        [correo]
+        [correoInput]
       );
 
       if (existingUser) {
@@ -141,7 +142,7 @@ const authController = {
       // Insertar nuevo usuario
       const result = await query(
         'INSERT INTO usuarios (nombre, correo, contrasena, activo) VALUES (?, ?, ?, ?)',
-        [nombre, correo, hashedPassword, true]
+        [nombre, correoInput, hashedPassword, true]
       );
 
       // Obtener el usuario creado
