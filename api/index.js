@@ -24,15 +24,33 @@ const movimientosRoutes = require('../routes/movimientos');
 const alertasRoutes = require('../routes/alertas');
 const ventasRoutes = require('../routes/ventas');
 
-// Rutas
+// Rutas con prefijo /api
 app.use('/api/auth', authRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/movimientos', movimientosRoutes);
 app.use('/api/alertas', alertasRoutes);
 app.use('/api/ventas', ventasRoutes);
 
+// Rutas sin prefijo /api (compatibilidad con reescrituras de Vercel)
+app.use('/auth', authRoutes);
+app.use('/productos', productosRoutes);
+app.use('/movimientos', movimientosRoutes);
+app.use('/alertas', alertasRoutes);
+app.use('/ventas', ventasRoutes);
+
 // Ruta de prueba
 app.get('/api/health', async (req, res) => {
+  const dbConnected = await testConnection();
+  res.json({ 
+    status: 'OK', 
+    message: 'Servidor funcionando correctamente',
+    database: dbConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Versión sin prefijo
+app.get('/health', async (req, res) => {
   const dbConnected = await testConnection();
   res.json({ 
     status: 'OK', 
@@ -51,5 +69,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Exportar para Vercel
-module.exports = app;
+// Exportar handler compatible con @vercel/node
+module.exports = (req, res) => app(req, res);
