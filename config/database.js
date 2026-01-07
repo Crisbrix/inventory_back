@@ -1,16 +1,19 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Configuración de la conexión a la base de datos
+// Configuración de la conexión a la base de datos TiDB
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST || 'gateway01.us-east-1.prod.aws.tidbcloud.com',
+  user: process.env.DB_USER || '1TEoM8obiKCAeP5.root',
+  password: process.env.DB_PASSWORD || '8zJ63QzDXkjGR2qS',
   database: process.env.DB_NAME || 'inventary',
-  port: process.env.DB_PORT || 3306,
+  port: process.env.DB_PORT || 4000,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ssl: {
+    rejectUnauthorized: true
+  }
 };
 
 // Crear pool de conexiones
