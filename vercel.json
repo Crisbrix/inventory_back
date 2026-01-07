@@ -1,9 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/auth.js": {
-      "runtime": "@vercel/node@2.x"
-    }
+    "api/auth.js": {}
   },
   "routes": [
     {
