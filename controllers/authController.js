@@ -59,21 +59,12 @@ const authController = {
         });
       }
 
-      // Obtener perfiles del usuario
-      const perfiles = await query(
-        `SELECT p.id, p.nombre, p.descripcion 
-         FROM perfiles p
-         INNER JOIN usuario_perfil up ON p.id = up.perfil_id
-         WHERE up.usuario_id = ?`,
-        [user.id]
-      );
-
       // Generar token JWT
       const token = jwt.sign(
         { 
           id: user.id, 
           correo: user.correo,
-          perfiles: perfiles.map(p => p.nombre)
+          rol: user.rol
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -84,7 +75,7 @@ const authController = {
         id: user.id,
         nombre: user.nombre,
         correo: user.correo,
-        perfiles: perfiles.map(p => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion }))
+        rol: user.rol
       };
 
       res.json({
@@ -189,7 +180,7 @@ const authController = {
       
       // Obtener usuario actualizado
       const [user] = await query(
-        'SELECT id, nombre, correo, activo, fecha_creacion FROM usuarios WHERE id = ?',
+        'SELECT id, nombre, correo, rol, activo, fecha_creacion FROM usuarios WHERE id = ?',
         [decoded.id]
       );
 
@@ -200,21 +191,9 @@ const authController = {
         });
       }
 
-      // Obtener perfiles del usuario
-      const perfiles = await query(
-        `SELECT p.id, p.nombre, p.descripcion 
-         FROM perfiles p
-         INNER JOIN usuario_perfil up ON p.id = up.perfil_id
-         WHERE up.usuario_id = ?`,
-        [user.id]
-      );
-
       res.json({
         success: true,
-        user: {
-          ...user,
-          perfiles: perfiles.map(p => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion }))
-        }
+        user: user
       });
     } catch (error) {
       res.status(401).json({

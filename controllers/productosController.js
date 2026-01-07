@@ -4,7 +4,10 @@ const productosController = {
   // Crear un nuevo producto
   async create(req, res) {
     try {
-      const { nombre, codigo, descripcion, stock_actual, stock_minimo } = req.body;
+      console.log('Request body received:', req.body);
+      const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo } = req.body;
+      
+      console.log('Extracted precio:', precio);
 
       // Validaciones
       if (!nombre) {
@@ -60,8 +63,8 @@ const productosController = {
 
       // Insertar el producto
       const result = await query(
-        'INSERT INTO productos (nombre, codigo, descripcion, stock_actual, stock_minimo, activo) VALUES (?, ?, ?, ?, ?, ?)',
-        [nombre, codigoProducto, descripcion || null, stock_actual || 0, stock_minimo || 0, true]
+        'INSERT INTO productos (nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [nombre, codigoProducto, descripcion || null, precio || 0, stock_actual || 0, stock_minimo || 0, true]
       );
 
       // Obtener el producto creado
@@ -141,7 +144,7 @@ const productosController = {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { nombre, codigo, descripcion, stock_actual, stock_minimo, activo } = req.body;
+      const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo } = req.body;
 
       // Verificar si el producto existe
       const [existingProduct] = await query(
@@ -173,11 +176,12 @@ const productosController = {
 
       // Actualizar el producto
       await query(
-        'UPDATE productos SET nombre = ?, codigo = ?, descripcion = ?, stock_actual = ?, stock_minimo = ?, activo = ? WHERE id = ?',
+        'UPDATE productos SET nombre = ?, codigo = ?, descripcion = ?, precio = ?, stock_actual = ?, stock_minimo = ?, activo = ? WHERE id = ?',
         [
           nombre || existingProduct.nombre,
           codigo !== undefined ? codigo : existingProduct.codigo,
           descripcion !== undefined ? descripcion : existingProduct.descripcion,
+          precio !== undefined ? precio : existingProduct.precio,
           stock_actual !== undefined ? stock_actual : existingProduct.stock_actual,
           stock_minimo !== undefined ? stock_minimo : existingProduct.stock_minimo,
           activo !== undefined ? activo : existingProduct.activo,

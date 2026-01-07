@@ -3,7 +3,7 @@ const cors = require('cors');
 const { testConnection } = require('./config/database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors());
@@ -13,10 +13,16 @@ app.use(express.urlencoded({ extended: true }));
 // Importar rutas
 const authRoutes = require('./routes/auth');
 const productosRoutes = require('./routes/productos');
+const movimientosRoutes = require('./routes/movimientos');
+const alertasRoutes = require('./routes/alertas');
+const ventasRoutes = require('./routes/ventas');
 
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/productos', productosRoutes);
+app.use('/api/movimientos', movimientosRoutes);
+app.use('/api/alertas', alertasRoutes);
+app.use('/api/ventas', ventasRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -45,9 +51,21 @@ async function startServer() {
     console.log('⚠️  Advertencia: No se pudo conectar a la base de datos. El servidor iniciará de todas formas.');
   }
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📡 API disponible en http://localhost:${PORT}/api`);
+  });
+
+  // Manejar errores del servidor
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Error: El puerto ${PORT} ya está en uso.`);
+      console.error(`💡 Solución: Cierra el proceso que usa el puerto ${PORT} o usa otro puerto.`);
+      process.exit(1);
+    } else {
+      console.error('❌ Error del servidor:', error);
+      process.exit(1);
+    }
   });
 }
 
