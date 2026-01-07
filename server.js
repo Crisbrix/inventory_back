@@ -42,6 +42,13 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Para Vercel: exportar la app en lugar de iniciar servidor
+if (process.env.NODE_ENV === 'production') {
+  module.exports = app;
+} else {
+  startServer();
+}
+
 // Iniciar servidor
 async function startServer() {
   // Probar conexión a la base de datos
@@ -51,27 +58,22 @@ async function startServer() {
     console.log('⚠️  Advertencia: No se pudo conectar a la base de datos. El servidor iniciará de todas formas.');
   }
 
-  // Para Vercel: exportar la app en lugar de iniciar servidor
-  if (process.env.NODE_ENV === 'production') {
-    module.exports = app;
-  } else {
-    const server = app.listen(PORT, () => {
-      console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-      console.log(`📡 API disponible en http://localhost:${PORT}/api`);
-    });
+  const server = app.listen(PORT, () => {
+    console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`📡 API disponible en http://localhost:${PORT}/api`);
+  });
 
-    // Manejar errores del servidor
-    server.on('error', (error) => {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`❌ Error: El puerto ${PORT} ya está en uso.`);
-        console.error(`💡 Solución: Cierra el proceso que usa el puerto ${PORT} o usa otro puerto.`);
-        process.exit(1);
-      } else {
-        console.error('❌ Error del servidor:', error);
-        process.exit(1);
-      }
-    });
-  }
+  // Manejar errores del servidor
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Error: El puerto ${PORT} ya está en uso.`);
+      console.error(`💡 Solución: Cierra el proceso que usa el puerto ${PORT} o usa otro puerto.`);
+      process.exit(1);
+    } else {
+      console.error('❌ Error del servidor:', error);
+      process.exit(1);
+    }
+  });
 }
 
 startServer();
