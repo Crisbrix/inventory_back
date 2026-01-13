@@ -76,10 +76,10 @@ async function startServer() {
   });
 }
 
-// Exportar app para pruebas o importaciones
-module.exports = app;
-
 // Solo iniciar el servidor cuando se ejecute directamente (entorno local)
 if (require.main === module) {
   startServer();
 }
+
+// Exportar para Vercel
+module.exports = app;
