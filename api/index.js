@@ -8,6 +8,22 @@ const app = express();
 app.use(express.json({ limit: '10mb', type: 'application/json' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+const corsOptions = {
+  origin: [
+    'https://inventory-frond.vercel.app',
+    'https://inventory-back-five.vercel.app',
+    'http://localhost:4200',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 // Middleware de depuración para verificar request body
 app.use((req, res, next) => {
   console.log('🔍 Debug - Method:', req.method);
@@ -17,15 +33,6 @@ app.use((req, res, next) => {
   console.log('🔍 Debug - Content-Type:', req.headers['content-type']);
   next();
 });
-
-const corsOptions = {
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Importar rutas
 const authRoutes = require('../routes/auth');
