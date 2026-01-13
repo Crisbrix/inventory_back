@@ -4,7 +4,20 @@ const { testConnection } = require('../config/database');
 
 const app = express();
 
-// Middlewares
+// Middlewares - Configuración robusta para Vercel
+app.use(express.json({ limit: '10mb', type: 'application/json' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Middleware de depuración para verificar request body
+app.use((req, res, next) => {
+  console.log('🔍 Debug - Method:', req.method);
+  console.log('🔍 Debug - URL:', req.url);
+  console.log('🔍 Debug - Headers:', req.headers);
+  console.log('🔍 Debug - Body:', req.body);
+  console.log('🔍 Debug - Content-Type:', req.headers['content-type']);
+  next();
+});
+
 const corsOptions = {
   origin: true,
   credentials: true,
@@ -12,10 +25,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
-// Responder preflight de todos los endpoints
 app.options('*', cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Importar rutas
 const authRoutes = require('../routes/auth');

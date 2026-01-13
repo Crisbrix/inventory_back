@@ -95,11 +95,18 @@ const authController = {
 
   async register(req, res) {
     try {
-      const { nombre, correo, email, password } = req.body;
+      console.log('🔍 Register - req.body:', req.body);
+      
+      // Manejo seguro de req.body
+      const body = req.body || {};
+      const { nombre, correo, email, password } = body;
       const correoInput = correo || email; // aceptar ambos nombres de campo
+
+      console.log('🔍 Register - datos extraídos:', { nombre, correoInput, password: password ? '***' : undefined });
 
       // Validar campos requeridos
       if (!nombre || !correoInput || !password) {
+        console.log('❌ Validación fallida - Campos faltantes:', { nombre: !!nombre, correoInput: !!correoInput, password: !!password });
         return res.status(400).json({
           success: false,
           message: 'Nombre, correo y contraseña son requeridos'
