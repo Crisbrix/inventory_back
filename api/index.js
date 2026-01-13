@@ -9,15 +9,10 @@ app.use(express.json({ limit: '10mb', type: 'application/json' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const corsOptions = {
-  origin: [
-    'https://inventory-frond.vercel.app',
-    'https://inventory-back-five.vercel.app',
-    'http://localhost:4200',
-    'http://localhost:3000'
-  ],
-  credentials: true,
+  origin: '*',
+  credentials: false,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
   preflightContinue: false,
   optionsSuccessStatus: 204
 };
