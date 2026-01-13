@@ -7,12 +7,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares
 const corsOptions = {
-  origin: [
-    'http://localhost:4200', 
-    'https://inventory-frond.vercel.app',
-    'https://inventory-frond-ifg99lg2i-crisbrixs-projects.vercel.app'
-  ],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
