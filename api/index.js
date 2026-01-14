@@ -192,7 +192,7 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
-    // Verificar si el usuario ya existe
+    // Verificar si el usuario ya existe (usando campo correo de la BD)
     const existingUserQuery = 'SELECT id FROM usuarios WHERE correo = ?';
     const [existingUser] = await query(existingUserQuery, [email]);
 
@@ -206,7 +206,7 @@ app.post('/api/auth/register', async (req, res) => {
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Insertar usuario en la base de datos
+    // Insertar usuario en la base de datos (usando campo correo)
     const insertQuery = `
       INSERT INTO usuarios (nombre, correo, contrasena, rol)
       VALUES (?, ?, ?, ?)
