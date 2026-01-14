@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const { testConnection } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -73,7 +72,9 @@ app.use((err, req, res, next) => {
 
 // Iniciar servidor
 async function startServer() {
-  // Probar conexión a la base de datos
+  // Importar y probar conexión a la base de datos solo cuando se inicia localmente
+  const { testConnection } = require('./config/database');
+  
   const dbConnected = await testConnection();
   
   if (!dbConnected) {
