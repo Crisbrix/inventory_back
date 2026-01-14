@@ -3,11 +3,11 @@ require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 const dbConfig = {
-  host: process.env.DB_HOST || 'gateway01.us-east-1.prod.aws.tidbcloud.com',
-  user: process.env.DB_USER || '1TEoM8obiKCAeP5.root',
-  password: process.env.DB_PASSWORD || 'fDs0REMWAHVieQO8',
-  database: process.env.DB_NAME || 'inventary',
-  port: Number(process.env.DB_PORT) || 4000,
+  host: 'gateway01.us-east-1.prod.aws.tidbcloud.com',
+  user: '1TEoM8obiKCAeP5.root',
+  password: 'fDs0REMWAHVieQO8',
+  database: 'inventary',
+  port: 4000,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
