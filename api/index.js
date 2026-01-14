@@ -293,6 +293,81 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+// Endpoint para actualizar producto
+app.put('/api/productos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo } = req.body;
+    const { query } = require('../config/database');
+    
+    // Actualizar producto en la base de datos
+    const updateQuery = `
+      UPDATE productos 
+      SET nombre = ?, codigo = ?, descripcion = ?, precio = ?, 
+          stock_actual = ?, stock_minimo = ?, activo = ?, 
+          fecha_actualizacion = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    
+    const result = await query(updateQuery, [nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo, id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+    
+    // Obtener producto actualizado
+    const selectQuery = 'SELECT * FROM productos WHERE id = ?';
+    const [productoActualizado] = await query(selectQuery, [id]);
+    
+    res.json({
+      success: true,
+      message: 'Producto actualizado exitosamente',
+      data: productoActualizado,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Endpoint para crear producto
+app.post('/api/productos', async (req, res) => {
+  try {
+    const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo } = req.body;
+    const { query } = require('../config/database');
+    
+    // Insertar nuevo producto
+    const insertQuery = `
+      INSERT INTO productos (nombre, codigo, descripcion, precio, stock_actual, stock_minimo)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    
+    const result = await query(insertQuery, [nombre, codigo, descripcion, precio, stock_actual, stock_minimo]);
+    
+    // Obtener producto creado
+    const selectQuery = 'SELECT * FROM productos WHERE id = ?';
+    const [productoCreado] = await query(selectQuery, [result.insertId]);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Producto creado exitosamente',
+      data: productoCreado,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Endpoint para usuarios
 app.get('/api/usuarios', async (req, res) => {
   try {
@@ -677,6 +752,8 @@ app.get('/', (req, res) => {
       '/api/movimientos/hoy',
       '/api/alertas/activas',
       'GET /api/productos',
+      'POST /api/productos',
+      'PUT /api/productos/:id',
       'GET /api/usuarios',
       'GET /api/configuracion',
       'GET /api/ventas/periodo',
