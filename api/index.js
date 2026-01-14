@@ -262,12 +262,22 @@ app.get('/api/dashboard/stats', async (req, res) => {
   try {
     const { query } = require('../config/database');
     
-    // Stats simuladas por ahora
+    // Obtener estadísticas reales de la base de datos
+    const totalProductosQuery = 'SELECT COUNT(*) as total FROM productos WHERE activo = 1';
+    const stockBajoQuery = 'SELECT COUNT(*) as total FROM productos WHERE stock_actual <= stock_minimo AND activo = 1';
+    const movimientosHoyQuery = 'SELECT COUNT(*) as total FROM movimientos_inventario WHERE DATE(fecha) = CURDATE()';
+    const alertasActivasQuery = 'SELECT COUNT(*) as total FROM alertas WHERE atendida = FALSE';
+    
+    const [totalProductos] = await query(totalProductosQuery);
+    const [stockBajo] = await query(stockBajoQuery);
+    const [movimientosHoy] = await query(movimientosHoyQuery);
+    const [alertasActivas] = await query(alertasActivasQuery);
+    
     const stats = {
-      totalProductos: 150,
-      stockBajo: 12,
-      movimientosHoy: 8,
-      alertasActivas: 3
+      totalProductos: totalProductos.total,
+      stockBajo: stockBajo.total,
+      movimientosHoy: movimientosHoy.total,
+      alertasActivas: alertasActivas.total
     };
     
     res.json({
@@ -354,43 +364,56 @@ app.get('/api/configuracion', async (req, res) => {
 app.get('/api/ventas/tendencia', async (req, res) => {
   try {
     const { periodo, anio, mes } = req.query;
+    const { query } = require('../config/database');
     
-    // Datos simulados por ahora
-    let tendencia = [];
+    let tendenciaQuery = '';
     
     if (periodo === 'mes') {
-      tendencia = [
-        { dia: 1, ventas: 1500000, productos: 5 },
-        { dia: 2, ventas: 2300000, productos: 8 },
-        { dia: 3, ventas: 1800000, productos: 6 },
-        { dia: 4, ventas: 3200000, productos: 12 },
-        { dia: 5, ventas: 2800000, productos: 9 },
-        { dia: 6, ventas: 3500000, productos: 13 },
-        { dia: 7, ventas: 2100000, productos: 7 },
-        { dia: 8, ventas: 2900000, productos: 10 },
-        { dia: 9, ventas: 4200000, productos: 15 },
-        { dia: 10, ventas: 3100000, productos: 11 }
-      ];
+      tendenciaQuery = `
+        SELECT 
+          DAY(v.fecha) as dia,
+          SUM(v.total) as ventas,
+          COUNT(vd.id) as productos
+        FROM ventas v
+        LEFT JOIN venta_detalle vd ON v.id = vd.venta_id
+        WHERE YEAR(v.fecha) = ? AND MONTH(v.fecha) = ?
+        GROUP BY DAY(v.fecha)
+        ORDER BY dia
+      `;
     } else if (periodo === 'semana') {
-      tendencia = [
-        { dia: 'Lunes', ventas: 8500000, productos: 28 },
-        { dia: 'Martes', ventas: 9200000, productos: 31 },
-        { dia: 'Miércoles', ventas: 7800000, productos: 25 },
-        { dia: 'Jueves', ventas: 10500000, productos: 34 },
-        { dia: 'Viernes', ventas: 12300000, productos: 41 },
-        { dia: 'Sábado', ventas: 6700000, productos: 22 },
-        { dia: 'Domingo', ventas: 4500000, productos: 15 }
-      ];
+      tendenciaQuery = `
+        SELECT 
+          DAYNAME(v.fecha) as dia,
+          SUM(v.total) as ventas,
+          COUNT(vd.id) as productos
+        FROM ventas v
+        LEFT JOIN venta_detalle vd ON v.id = vd.venta_id
+        WHERE YEARWEEK(v.fecha) = YEARWEEK(CURDATE())
+        GROUP BY DAYNAME(v.fecha)
+        ORDER BY FIELD(DAYNAME(v.fecha), 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+      `;
     } else if (periodo === 'anio') {
-      tendencia = [
-        { mes: 'Enero', ventas: 45000000, productos: 150 },
-        { mes: 'Febrero', ventas: 52000000, productos: 178 },
-        { mes: 'Marzo', ventas: 48000000, productos: 165 },
-        { mes: 'Abril', ventas: 61000000, productos: 203 },
-        { mes: 'Mayo', ventas: 58000000, productos: 192 },
-        { mes: 'Junio', ventas: 72000000, productos: 238 }
-      ];
+      tendenciaQuery = `
+        SELECT 
+          MONTHNAME(v.fecha) as mes,
+          SUM(v.total) as ventas,
+          COUNT(vd.id) as productos
+        FROM ventas v
+        LEFT JOIN venta_detalle vd ON v.id = vd.venta_id
+        WHERE YEAR(v.fecha) = ?
+        GROUP BY MONTH(v.fecha)
+        ORDER BY MONTH(v.fecha)
+      `;
     }
+    
+    let params = [];
+    if (periodo === 'mes') {
+      params = [anio, mes];
+    } else if (periodo === 'anio') {
+      params = [anio];
+    }
+    
+    const tendencia = await query(tendenciaQuery, params);
     
     res.json({
       success: true,
@@ -409,31 +432,51 @@ app.get('/api/ventas/tendencia', async (req, res) => {
 app.get('/api/ventas/periodo', async (req, res) => {
   try {
     const { periodo, anio, mes } = req.query;
+    const { query } = require('../config/database');
     
-    // Datos simulados por ahora
-    let ventas = [];
+    let ventasQuery = '';
     
     if (periodo === 'mes') {
-      ventas = [
-        { id: 1, fecha: '2026-01-01', total: 1500000, productos: 5 },
-        { id: 2, fecha: '2026-01-02', total: 2300000, productos: 8 },
-        { id: 3, fecha: '2026-01-03', total: 1800000, productos: 6 },
-        { id: 4, fecha: '2026-01-04', total: 3200000, productos: 12 },
-        { id: 5, fecha: '2026-01-05', total: 2800000, productos: 9 }
-      ];
+      ventasQuery = `
+        SELECT 
+          DATE(v.fecha) as fecha,
+          COUNT(*) as productos,
+          SUM(v.total) as total
+        FROM ventas v
+        WHERE YEAR(v.fecha) = ? AND MONTH(v.fecha) = ?
+        GROUP BY DATE(v.fecha)
+        ORDER BY fecha
+      `;
     } else if (periodo === 'semana') {
-      ventas = [
-        { id: 1, fecha: '2026-01-13', total: 8500000, productos: 28 },
-        { id: 2, fecha: '2026-01-14', total: 9200000, productos: 31 }
-      ];
+      ventasQuery = `
+        SELECT 
+          DATE(v.fecha) as fecha,
+          COUNT(*) as productos,
+          SUM(v.total) as total
+        FROM ventas v
+        WHERE YEARWEEK(v.fecha) = YEARWEEK(CURDATE())
+        GROUP BY DATE(v.fecha)
+        ORDER BY fecha
+      `;
     } else if (periodo === 'dia') {
-      ventas = [
-        { id: 1, hora: '09:00', total: 1200000, productos: 4 },
-        { id: 2, hora: '11:00', total: 2300000, productos: 7 },
-        { id: 3, hora: '14:00', total: 1800000, productos: 6 },
-        { id: 4, hora: '16:00', total: 3400000, productos: 11 }
-      ];
+      ventasQuery = `
+        SELECT 
+          HOUR(v.fecha) as hora,
+          COUNT(*) as productos,
+          SUM(v.total) as total
+        FROM ventas v
+        WHERE DATE(v.fecha) = CURDATE()
+        GROUP BY HOUR(v.fecha)
+        ORDER BY hora
+      `;
     }
+    
+    let params = [];
+    if (periodo === 'mes') {
+      params = [anio, mes];
+    }
+    
+    const ventas = await query(ventasQuery, params);
     
     res.json({
       success: true,
@@ -451,17 +494,32 @@ app.get('/api/ventas/periodo', async (req, res) => {
 // Endpoint para métodos de pago
 app.get('/api/ventas/metodos-pago', async (req, res) => {
   try {
-    // Datos simulados por ahora
-    const metodosPago = [
-      { metodo: 'Efectivo', total: 15000000, porcentaje: 45, cantidad: 45 },
-      { metodo: 'Nequi', total: 8500000, porcentaje: 25, cantidad: 28 },
-      { metodo: 'Tarjeta Crédito', total: 6800000, porcentaje: 20, cantidad: 15 },
-      { metodo: 'Transferencia', total: 3300000, porcentaje: 10, cantidad: 8 }
-    ];
+    const { query } = require('../config/database');
+    
+    // Obtener estadísticas reales de métodos de pago
+    const metodosPagoQuery = `
+      SELECT 
+        metodo_pago as metodo,
+        COUNT(*) as cantidad,
+        SUM(total) as total
+      FROM ventas
+      GROUP BY metodo_pago
+      ORDER BY total DESC
+    `;
+    
+    const metodosPago = await query(metodosPagoQuery);
+    
+    // Calcular porcentajes
+    const totalGeneral = metodosPago.reduce((sum, metodo) => sum + parseFloat(metodo.total), 0);
+    
+    const metodosConPorcentaje = metodosPago.map(metodo => ({
+      ...metodo,
+      porcentaje: parseFloat(((metodo.total / totalGeneral) * 100).toFixed(2))
+    }));
     
     res.json({
       success: true,
-      data: metodosPago,
+      data: metodosConPorcentaje,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -475,14 +533,27 @@ app.get('/api/ventas/metodos-pago', async (req, res) => {
 // Endpoint para top productos
 app.get('/api/ventas/top-productos', async (req, res) => {
   try {
-    // Datos simulados por ahora
-    const topProductos = [
-      { id: 1, nombre: 'Jean Clase A', ventas: 25, total: 22500000, stock: 10 },
-      { id: 2, nombre: 'Camiseta Básica', ventas: 18, total: 9000000, stock: 25 },
-      { id: 3, nombre: 'Pantalón Cargo', ventas: 15, total: 13500000, stock: 8 },
-      { id: 4, nombre: 'Chaqueta Deportiva', ventas: 12, total: 18000000, stock: 5 },
-      { id: 5, nombre: 'Zapatillas Running', ventas: 10, total: 15000000, stock: 3 }
-    ];
+    const { query } = require('../config/database');
+    
+    // Obtener productos más vendidos
+    const topProductosQuery = `
+      SELECT 
+        p.id,
+        p.nombre,
+        p.codigo,
+        p.stock_actual,
+        SUM(vd.cantidad) as ventas,
+        SUM(vd.cantidad * vd.precio) as total
+      FROM productos p
+      LEFT JOIN venta_detalle vd ON p.id = vd.producto_id
+      LEFT JOIN ventas v ON vd.venta_id = v.id
+      GROUP BY p.id, p.nombre, p.codigo, p.stock_actual
+      HAVING ventas > 0
+      ORDER BY ventas DESC
+      LIMIT 10
+    `;
+    
+    const topProductos = await query(topProductosQuery);
     
     res.json({
       success: true,
@@ -533,12 +604,19 @@ app.get('/api/productos', async (req, res) => {
 // Endpoint para movimientos de hoy
 app.get('/api/movimientos/hoy', async (req, res) => {
   try {
-    // Datos simulados por ahora
-    const movimientos = [
-      { id: 1, tipo: 'entrada', producto: 'Laptop Dell', cantidad: 5, hora: '09:30' },
-      { id: 2, tipo: 'salida', producto: 'Mouse Logitech', cantidad: 3, hora: '10:15' },
-      { id: 3, tipo: 'entrada', producto: 'Teclado HP', cantidad: 10, hora: '11:00' }
-    ];
+    const { query } = require('../config/database');
+    
+    // Obtener movimientos reales del día
+    const movimientosQuery = `
+      SELECT mi.*, p.nombre as producto_nombre, p.codigo as producto_codigo
+      FROM movimientos_inventario mi
+      LEFT JOIN productos p ON mi.producto_id = p.id
+      WHERE DATE(mi.fecha) = CURDATE()
+      ORDER BY mi.fecha DESC
+      LIMIT 10
+    `;
+    
+    const movimientos = await query(movimientosQuery);
     
     res.json({
       success: true,
@@ -556,12 +634,19 @@ app.get('/api/movimientos/hoy', async (req, res) => {
 // Endpoint para alertas activas
 app.get('/api/alertas/activas', async (req, res) => {
   try {
-    // Datos simulados por ahora
-    const alertas = [
-      { id: 1, tipo: 'stock_bajo', producto: 'Laptop Dell', mensaje: 'Stock mínimo alcanzado', criticidad: 'alta' },
-      { id: 2, tipo: 'stock_bajo', producto: 'Mouse USB', mensaje: 'Quedan 3 unidades', criticidad: 'media' },
-      { id: 3, tipo: 'sin_movimientos', producto: 'Monitor LG', mensaje: 'Sin movimientos en 7 días', criticidad: 'baja' }
-    ];
+    const { query } = require('../config/database');
+    
+    // Obtener alertas reales no atendidas
+    const alertasQuery = `
+      SELECT a.*, p.nombre as producto_nombre, p.codigo as producto_codigo, p.stock_actual
+      FROM alertas a
+      LEFT JOIN productos p ON a.producto_id = p.id
+      WHERE a.atendida = FALSE
+      ORDER BY a.fecha DESC
+      LIMIT 20
+    `;
+    
+    const alertas = await query(alertasQuery);
     
     res.json({
       success: true,
