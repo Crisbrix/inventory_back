@@ -19,40 +19,41 @@ const productosController = {
 
       // Generar código automático si no se proporciona
       let codigoProducto = codigo;
+      
       if (!codigoProducto) {
         // Obtener el último ID de producto
-        const [lastProduct] = await pool.execute(
+        const [lastProduct] = await query(
           'SELECT id FROM productos ORDER BY id DESC LIMIT 1'
         );
         
-        const nextId = lastProduct.length > 0 ? lastProduct[0].id + 1 : 1;
-        codigoProducto = `PROD-${nextId.toString().padStart(4, '0')}`;
+        const nextId = lastProduct ? lastProduct.id + 1 : 1;
+        codigoProducto = `PROD-${String(nextId).padStart(4, '0')}`;
         
-        // Verificar que el código generado no exista
+        // Verificar que el código generado no exista (por si acaso)
         let exists = true;
         let counter = 0;
         while (exists && counter < 100) {
-          const [existing] = await pool.execute(
+          const [existing] = await query(
             'SELECT id FROM productos WHERE codigo = ?',
             [codigoProducto]
           );
           
-          if (existing.length === 0) {
+          if (!existing) {
             exists = false;
           } else {
-            const nextId = counter + 1;
-            codigoProducto = `PROD-${nextId.toString().padStart(4, '0')}`;
+            const newId = (lastProduct ? lastProduct.id : 0) + counter + 1;
+            codigoProducto = `PROD-${String(newId).padStart(4, '0')}`;
             counter++;
           }
         }
       } else {
         // Si se proporciona un código, verificar que no exista
-        const [existingProduct] = await pool.execute(
+        const [existingProduct] = await query(
           'SELECT id FROM productos WHERE codigo = ?',
           [codigoProducto]
         );
-        
-        if (existingProduct.length > 0) {
+
+        if (existingProduct) {
           return res.status(400).json({
             success: false,
             message: 'El código del producto ya existe'
@@ -61,27 +62,27 @@ const productosController = {
       }
 
       // Insertar el producto
-      const [result] = await pool.execute(
+      const result = await query(
         'INSERT INTO productos (nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [nombre, codigoProducto, descripcion || null, precio || 0, stock_actual || 0, stock_minimo || 0, true]
       );
 
       // Obtener el producto creado
-      const [newProduct] = await pool.execute(
+      const [newProduct] = await query(
         'SELECT * FROM productos WHERE id = ?',
         [result.insertId]
       );
 
       res.status(201).json({
         success: true,
-        message: 'Producto creado exitosamente',
-        data: newProduct[0]
+        message: 'Producto registrado exitosamente',
+        data: newProduct
       });
     } catch (error) {
-      console.error('Error creando producto:', error);
+      console.error('Error al crear producto:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al crear producto',
+        message: 'Error al registrar el producto',
         error: error.message
       });
     }
@@ -90,7 +91,7 @@ const productosController = {
   // Obtener todos los productos
   async getAll(req, res) {
     try {
-      const [productos] = await pool.execute(
+      const productos = await query(
         'SELECT * FROM productos WHERE activo = true ORDER BY nombre ASC'
       );
 
@@ -99,10 +100,11 @@ const productosController = {
         data: productos
       });
     } catch (error) {
-      console.error('Error obteniendo productos:', error);
+      console.error('Error al obtener productos:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener productos'
+        message: 'Error al obtener los productos',
+        error: error.message
       });
     }
   },
@@ -112,12 +114,12 @@ const productosController = {
     try {
       const { id } = req.params;
       
-      const [producto] = await pool.execute(
+      const [producto] = await query(
         'SELECT * FROM productos WHERE id = ?',
         [id]
       );
 
-      if (producto.length === 0) {
+      if (!producto) {
         return res.status(404).json({
           success: false,
           message: 'Producto no encontrado'
@@ -126,13 +128,14 @@ const productosController = {
 
       res.json({
         success: true,
-        data: producto[0]
+        data: producto
       });
     } catch (error) {
-      console.error('Error obteniendo producto:', error);
+      console.error('Error al obtener producto:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener producto'
+        message: 'Error al obtener el producto',
+        error: error.message
       });
     }
   },
@@ -144,12 +147,12 @@ const productosController = {
       const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo } = req.body;
 
       // Verificar si el producto existe
-      const [existingProduct] = await pool.execute(
+      const [existingProduct] = await query(
         'SELECT * FROM productos WHERE id = ?',
         [id]
       );
 
-      if (existingProduct.length === 0) {
+      if (!existingProduct) {
         return res.status(404).json({
           success: false,
           message: 'Producto no encontrado'
@@ -157,37 +160,37 @@ const productosController = {
       }
 
       // Verificar si el código ya existe en otro producto (si se proporciona)
-      if (codigo && codigo !== existingProduct[0].codigo) {
-        const [codeExists] = await pool.execute(
+      if (codigo && codigo !== existingProduct.codigo) {
+        const [codeExists] = await query(
           'SELECT id FROM productos WHERE codigo = ? AND id != ?',
           [codigo, id]
         );
-        
-        if (codeExists.length > 0) {
+
+        if (codeExists) {
           return res.status(400).json({
             success: false,
-            message: 'El código del producto ya existe en otro producto'
+            message: 'El código del producto ya existe'
           });
         }
       }
 
       // Actualizar el producto
-      await pool.execute(
+      await query(
         'UPDATE productos SET nombre = ?, codigo = ?, descripcion = ?, precio = ?, stock_actual = ?, stock_minimo = ?, activo = ? WHERE id = ?',
         [
-          nombre || existingProduct[0].nombre,
-          codigo || existingProduct[0].codigo,
-          descripcion !== undefined ? descripcion : existingProduct[0].descripcion,
-          precio !== undefined ? precio : existingProduct[0].precio,
-          stock_actual !== undefined ? stock_actual : existingProduct[0].stock_actual,
-          stock_minimo !== undefined ? stock_minimo : existingProduct[0].stock_minimo,
-          activo !== undefined ? activo : existingProduct[0].activo,
+          nombre || existingProduct.nombre,
+          codigo !== undefined ? codigo : existingProduct.codigo,
+          descripcion !== undefined ? descripcion : existingProduct.descripcion,
+          precio !== undefined ? precio : existingProduct.precio,
+          stock_actual !== undefined ? stock_actual : existingProduct.stock_actual,
+          stock_minimo !== undefined ? stock_minimo : existingProduct.stock_minimo,
+          activo !== undefined ? activo : existingProduct.activo,
           id
         ]
       );
 
       // Obtener el producto actualizado
-      const [updatedProduct] = await pool.execute(
+      const [updatedProduct] = await query(
         'SELECT * FROM productos WHERE id = ?',
         [id]
       );
@@ -195,29 +198,30 @@ const productosController = {
       res.json({
         success: true,
         message: 'Producto actualizado exitosamente',
-        data: updatedProduct[0]
+        data: updatedProduct
       });
     } catch (error) {
-      console.error('Error actualizando producto:', error);
+      console.error('Error al actualizar producto:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al actualizar producto'
+        message: 'Error al actualizar el producto',
+        error: error.message
       });
     }
   },
 
-  // Eliminar un producto (soft delete)
+  // Eliminar (desactivar) un producto
   async delete(req, res) {
     try {
       const { id } = req.params;
 
       // Verificar si el producto existe
-      const [existingProduct] = await pool.execute(
+      const [existingProduct] = await query(
         'SELECT * FROM productos WHERE id = ?',
         [id]
       );
 
-      if (existingProduct.length === 0) {
+      if (!existingProduct) {
         return res.status(404).json({
           success: false,
           message: 'Producto no encontrado'
@@ -225,7 +229,7 @@ const productosController = {
       }
 
       // Desactivar el producto (soft delete)
-      await pool.execute(
+      await query(
         'UPDATE productos SET activo = false WHERE id = ?',
         [id]
       );
@@ -235,13 +239,15 @@ const productosController = {
         message: 'Producto eliminado exitosamente'
       });
     } catch (error) {
-      console.error('Error eliminando producto:', error);
+      console.error('Error al eliminar producto:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al eliminar producto'
+        message: 'Error al eliminar el producto',
+        error: error.message
       });
     }
   }
 };
 
 module.exports = productosController;
+

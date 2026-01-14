@@ -1,14 +1,15 @@
-const { pool } = require('../config/database');
+const { query } = require('../config/database');
 
 // Obtener todas las alertas
 const getAll = async (req, res) => {
   try {
-    const [alertas] = await pool.execute(`
+    const sql = `
       SELECT a.*, p.nombre as producto_nombre, p.codigo as producto_codigo
       FROM alertas a
       JOIN productos p ON a.producto_id = p.id
       ORDER BY a.fecha DESC
-    `);
+    `;
+    const alertas = await query(sql);
     
     res.json({
       success: true,
@@ -26,13 +27,14 @@ const getAll = async (req, res) => {
 // Obtener alertas activas
 const getActivas = async (req, res) => {
   try {
-    const [alertas] = await pool.execute(`
+    const sql = `
       SELECT a.*, p.nombre as producto_nombre, p.codigo as producto_codigo
       FROM alertas a
       JOIN productos p ON a.producto_id = p.id
-      WHERE a.atendida = FALSE
+      WHERE a.atendida = false
       ORDER BY a.fecha DESC
-    `);
+    `;
+    const alertas = await query(sql);
     
     res.json({
       success: true,
@@ -51,13 +53,13 @@ const getActivas = async (req, res) => {
 const getByProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const [alertas] = await pool.execute(`
-      SELECT a.*, p.nombre as producto_nombre, p.codigo as producto_codigo
-      FROM alertas a
-      JOIN productos p ON a.producto_id = p.id
-      WHERE a.producto_id = ?
-      ORDER BY a.fecha DESC
-    `, [id]);
+    const sql = `
+      SELECT *
+      FROM alertas
+      WHERE producto_id = ?
+      ORDER BY fecha DESC
+    `;
+    const alertas = await query(sql, [id]);
     
     res.json({
       success: true,
@@ -67,7 +69,7 @@ const getByProducto = async (req, res) => {
     console.error('Error obteniendo alertas por producto:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener alertas por producto'
+      message: 'Error al obtener alertas del producto'
     });
   }
 };
@@ -76,12 +78,12 @@ const getByProducto = async (req, res) => {
 const marcarAtendida = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    await pool.execute(`
+    const sql = `
       UPDATE alertas 
-      SET atendida = TRUE 
+      SET atendida = true 
       WHERE id = ?
-    `, [id]);
+    `;
+    await query(sql, [id]);
     
     res.json({
       success: true,
@@ -101,19 +103,21 @@ const create = async (req, res) => {
   try {
     const { producto_id, tipo, mensaje } = req.body;
     
+    // Validar datos
     if (!producto_id || !tipo || !mensaje) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos requeridos deben ser proporcionados'
+        message: 'Faltan datos requeridos'
       });
     }
-    
-    const [result] = await pool.execute(`
+
+    const sql = `
       INSERT INTO alertas (producto_id, tipo, mensaje)
       VALUES (?, ?, ?)
-    `, [producto_id, tipo, mensaje]);
+    `;
+    const result = await query(sql, [producto_id, tipo, mensaje]);
     
-    res.status(201).json({
+    res.json({
       success: true,
       message: 'Alerta creada exitosamente',
       data: { id: result.insertId }
@@ -128,13 +132,11 @@ const create = async (req, res) => {
 };
 
 // Eliminar alerta
-const deleteAlerta = async (req, res) => {
+const deleteAlert = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    await pool.execute(`
-      DELETE FROM alertas WHERE id = ?
-    `, [id]);
+    const sql = 'DELETE FROM alertas WHERE id = ?';
+    await query(sql, [id]);
     
     res.json({
       success: true,
@@ -155,5 +157,5 @@ module.exports = {
   getByProducto,
   marcarAtendida,
   create,
-  deleteAlerta
+  delete: deleteAlert
 };

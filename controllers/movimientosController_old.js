@@ -52,13 +52,14 @@ const getHoy = async (req, res) => {
 const getByTipo = async (req, res) => {
   try {
     const { tipo } = req.params;
-    const [movimientos] = await pool.execute(`
+    const sql = `
       SELECT m.*, p.nombre as producto_nombre, p.codigo as producto_codigo
       FROM movimientos_inventario m
       JOIN productos p ON m.producto_id = p.id
       WHERE m.tipo_movimiento = ?
       ORDER BY m.fecha DESC
-    `, [tipo]);
+    `;
+    const movimientos = await query(sql, [tipo]);
     
     res.json({
       success: true,
@@ -76,7 +77,7 @@ const getByTipo = async (req, res) => {
 // Obtener top 5 productos más movidos
 const getTopProductos = async (req, res) => {
   try {
-    const [productos] = await pool.execute(`
+    const sql = `
       SELECT 
         p.id,
         p.nombre,
@@ -90,7 +91,8 @@ const getTopProductos = async (req, res) => {
       HAVING total_movimientos > 0
       ORDER BY total_movimientos DESC
       LIMIT 5
-    `);
+    `;
+    const productos = await query(sql);
     
     res.json({
       success: true,
@@ -108,15 +110,16 @@ const getTopProductos = async (req, res) => {
 // Obtener estadísticas de entradas vs salidas
 const getEntradasSalidas = async (req, res) => {
   try {
-    const [estadisticas] = await pool.execute(`
+    const sql = `
       SELECT 
         tipo_movimiento,
         COUNT(*) as total_movimientos,
         SUM(cantidad) as total_cantidad
       FROM movimientos_inventario
+      WHERE DATE(fecha) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
       GROUP BY tipo_movimiento
-      ORDER BY tipo_movimiento
-    `);
+    `;
+    const estadisticas = await query(sql);
     
     res.json({
       success: true,
@@ -134,19 +137,19 @@ const getEntradasSalidas = async (req, res) => {
 // Obtener movimientos por tipo para gráfica
 const getMovimientosPorTipo = async (req, res) => {
   try {
-    const [estadisticas] = await pool.execute(`
+    const sql = `
       SELECT 
         tipo_movimiento,
-        COUNT(*) as total_movimientos,
-        SUM(cantidad) as total_cantidad
+        COUNT(*) as cantidad
       FROM movimientos_inventario
+      WHERE DATE(fecha) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
       GROUP BY tipo_movimiento
-      ORDER BY total_movimientos DESC
-    `);
+    `;
+    const movimientos = await query(sql);
     
     res.json({
       success: true,
-      data: estadisticas
+      data: movimientos
     });
   } catch (error) {
     console.error('Error obteniendo movimientos por tipo:', error);
@@ -162,35 +165,30 @@ const create = async (req, res) => {
   try {
     const { producto_id, tipo_movimiento, cantidad, observacion } = req.body;
     
+    // Validar datos
     if (!producto_id || !tipo_movimiento || !cantidad) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos requeridos deben ser proporcionados'
+        message: 'Faltan datos requeridos'
       });
     }
-    
+
     // Insertar movimiento
-    const [result] = await pool.execute(`
+    const sql = `
       INSERT INTO movimientos_inventario (producto_id, tipo_movimiento, cantidad, observacion)
       VALUES (?, ?, ?, ?)
-    `, [producto_id, tipo_movimiento, cantidad, observacion]);
+    `;
+    const result = await query(sql, [producto_id, tipo_movimiento, cantidad, observacion]);
     
     // Actualizar stock del producto
-    if (tipo_movimiento === 'ENTRADA') {
-      await pool.execute(`
-        UPDATE productos 
-        SET stock_actual = stock_actual + ? 
-        WHERE id = ?
-      `, [cantidad, producto_id]);
-    } else if (tipo_movimiento === 'SALIDA') {
-      await pool.execute(`
-        UPDATE productos 
-        SET stock_actual = stock_actual - ? 
-        WHERE id = ?
-      `, [cantidad, producto_id]);
-    }
+    const updateSql = `
+      UPDATE productos 
+      SET stock = stock ${tipo_movimiento === 'ENTRADA' ? '+' : '-'} ?
+      WHERE id = ?
+    `;
+    await query(updateSql, [cantidad, producto_id]);
     
-    res.status(201).json({
+    res.json({
       success: true,
       message: 'Movimiento creado exitosamente',
       data: { id: result.insertId }
@@ -208,13 +206,13 @@ const create = async (req, res) => {
 const getByProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const [movimientos] = await pool.execute(`
-      SELECT m.*, p.nombre as producto_nombre, p.codigo as producto_codigo
-      FROM movimientos_inventario m
-      JOIN productos p ON m.producto_id = p.id
-      WHERE m.producto_id = ?
-      ORDER BY m.fecha DESC
-    `, [id]);
+    const sql = `
+      SELECT *
+      FROM movimientos_inventario
+      WHERE producto_id = ?
+      ORDER BY fecha DESC
+    `;
+    const movimientos = await query(sql, [id]);
     
     res.json({
       success: true,
@@ -224,7 +222,7 @@ const getByProducto = async (req, res) => {
     console.error('Error obteniendo movimientos por producto:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener movimientos por producto'
+      message: 'Error al obtener movimientos del producto'
     });
   }
 };

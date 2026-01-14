@@ -1,15 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-const { testConnection } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
 const corsOptions = {
-  origin: '*',
+  origin: ['https://inventory-frond.vercel.app', 'http://localhost:4200', 'http://localhost:3000'],
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
@@ -22,6 +22,8 @@ const productosRoutes = require('./routes/productos');
 const movimientosRoutes = require('./routes/movimientos');
 const alertasRoutes = require('./routes/alertas');
 const ventasRoutes = require('./routes/ventas');
+const usuariosRoutes = require('./routes/usuarios');
+const configuracionRoutes = require('./routes/configuracion');
 
 // Rutas
 app.use('/api/auth', authRoutes);
@@ -29,6 +31,8 @@ app.use('/api/productos', productosRoutes);
 app.use('/api/movimientos', movimientosRoutes);
 app.use('/api/alertas', alertasRoutes);
 app.use('/api/ventas', ventasRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -50,7 +54,9 @@ app.use((err, req, res, next) => {
 
 // Iniciar servidor
 async function startServer() {
-  // Probar conexión a la base de datos
+  // Importar y probar conexión a la base de datos solo cuando se inicia localmente
+  const { testConnection } = require('./config/database');
+  
   const dbConnected = await testConnection();
   
   if (!dbConnected) {
@@ -75,10 +81,11 @@ async function startServer() {
   });
 }
 
+// Para Vercel - no iniciar servidor automáticamente
 // Solo iniciar el servidor cuando se ejecute directamente (entorno local)
 if (require.main === module) {
   startServer();
 }
 
 // Exportar para Vercel
-module.exports = app;
+module.exports = (req, res) => app(req, res);

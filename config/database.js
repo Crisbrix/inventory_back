@@ -17,13 +17,21 @@ const dbConfig = {
   ssl: useSSL ? { rejectUnauthorized: true } : undefined
 };
 
-// Crear pool de conexiones
-const pool = mysql.createPool(dbConfig);
+// Variable para almacenar el pool (lazy initialization)
+let pool = null;
+
+// Función para obtener el pool (crea solo cuando se necesita)
+function getPool() {
+  if (!pool) {
+    pool = mysql.createPool(dbConfig);
+  }
+  return pool;
+}
 
 // Función para probar la conexión
 async function testConnection() {
   try {
-    const connection = await pool.getConnection();
+    const connection = await getPool().getConnection();
     console.log('Conexión a MySQL establecida correctamente');
     connection.release();
     return true;
@@ -36,7 +44,7 @@ async function testConnection() {
 // Función para ejecutar queries
 async function query(sql, params) {
   try {
-    const [results] = await pool.execute(sql, params);
+    const [results] = await getPool().execute(sql, params);
     return results;
   } catch (error) {
     console.error('Error ejecutando query:', error);
@@ -45,7 +53,8 @@ async function query(sql, params) {
 }
 
 module.exports = {
-  pool,
+  getPool,
+  pool: getPool(), // Para compatibilidad con código existente
   query,
   testConnection
 };
