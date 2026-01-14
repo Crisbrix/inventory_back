@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -14,6 +16,138 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true
 }));
+
+// Middleware para verificar JWT
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token no proporcionado'
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, 'tu_secreto_super_seguro_cambiar_en_produccion');
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token inválido'
+    });
+  }
+};
+
+// Endpoint de login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email y contraseña son requeridos'
+      });
+    }
+
+    // Usuario de prueba (simulado)
+    const testUser = {
+      id: 1,
+      nombre: 'Administrador',
+      email: 'admin@inventory.com',
+      rol: 'ADMIN',
+      contrasena: '$2a$10$YourHashedPasswordHere' // Hash de 'admin123'
+    };
+
+    // Verificar credenciales
+    if (email !== testUser.email || password !== 'admin123') {
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciales inválidas'
+      });
+    }
+
+    // Generar token
+    const token = jwt.sign(
+      { 
+        id: testUser.id, 
+        email: testUser.email, 
+        rol: testUser.rol 
+      },
+      'tu_secreto_super_seguro_cambiar_en_produccion',
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Login exitoso',
+      data: {
+        token,
+        user: {
+          id: testUser.id,
+          nombre: testUser.nombre,
+          email: testUser.email,
+          rol: testUser.rol
+        }
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint de registro
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { nombre, email, password, rol = 'VENDEDOR' } = req.body;
+
+    if (!nombre || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Todos los campos son requeridos'
+      });
+    }
+
+    // Simular registro (en producción guardar en BD)
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    res.json({
+      success: true,
+      message: 'Usuario registrado exitosamente',
+      data: {
+        id: Date.now(),
+        nombre,
+        email,
+        rol
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para verificar token
+app.get('/api/auth/verify', verifyToken, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Token válido',
+    data: {
+      user: req.user
+    }
+  });
+});
 
 // Ruta de prueba simple
 app.get('/api/test', (req, res) => {
@@ -123,6 +257,9 @@ app.get('/', (req, res) => {
     message: 'API de Inventario funcionando',
     version: '1.0.0',
     endpoints: [
+      'POST /api/auth/login',
+      'POST /api/auth/register',
+      'GET /api/auth/verify',
       '/api/health',
       '/api/dashboard/stats',
       '/api/movimientos/hoy',
