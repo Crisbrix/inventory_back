@@ -153,9 +153,12 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('Login exitoso - Token generado:', token);
+    console.log('Login exitoso - User:', testUser);
+
     res.json({
       success: true,
-      message: 'Login exitoso',
+      message: 'Login exitoso (GET temporal)',
       data: {
         token,
         user: {
