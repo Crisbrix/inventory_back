@@ -300,6 +300,18 @@ app.put('/api/productos/:id', async (req, res) => {
     const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo } = req.body;
     const { query } = require('../config/database');
     
+    // Logs para depuración
+    console.log('PUT /api/productos/:id - ID:', id);
+    console.log('PUT /api/productos/:id - Body:', req.body);
+    
+    // Validar que todos los campos necesarios existan
+    if (!nombre || !codigo || !precio === undefined || !stock_actual === undefined || !stock_minimo === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Todos los campos son requeridos'
+      });
+    }
+    
     // Actualizar producto en la base de datos
     const updateQuery = `
       UPDATE productos 
@@ -309,7 +321,12 @@ app.put('/api/productos/:id', async (req, res) => {
       WHERE id = ?
     `;
     
+    console.log('Query:', updateQuery);
+    console.log('Params:', [nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo, id]);
+    
     const result = await query(updateQuery, [nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo, id]);
+    
+    console.log('Result:', result);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({
@@ -329,6 +346,7 @@ app.put('/api/productos/:id', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('Error en PUT /api/productos/:id:', error);
     res.status(500).json({
       success: false,
       message: error.message
