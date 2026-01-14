@@ -16,24 +16,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Importar rutas
-const authRoutes = require('../routes/auth');
-const productosRoutes = require('../routes/productos');
-const movimientosRoutes = require('../routes/movimientos');
-const alertasRoutes = require('../routes/alertas');
-const ventasRoutes = require('../routes/ventas');
-const usuariosRoutes = require('../routes/usuarios');
-const configuracionRoutes = require('../routes/configuracion');
-
-// Rutas con prefijo /api
-app.use('/api/auth', authRoutes);
-app.use('/api/productos', productosRoutes);
-app.use('/api/movimientos', movimientosRoutes);
-app.use('/api/alertas', alertasRoutes);
-app.use('/api/ventas', ventasRoutes);
-app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/configuracion', configuracionRoutes);
-
 // Ruta de prueba
 app.get('/api/test', (req, res) => {
   res.json({ 
@@ -60,6 +42,24 @@ app.get('/api/health', async (req, res) => {
     });
   }
 });
+
+// Importar rutas
+const authRoutes = require('../routes/auth');
+const productosRoutes = require('../routes/productos');
+const movimientosRoutes = require('../routes/movimientos');
+const alertasRoutes = require('../routes/alertas');
+const ventasRoutes = require('../routes/ventas');
+const usuariosRoutes = require('../routes/usuarios');
+const configuracionRoutes = require('../routes/configuracion');
+
+// Rutas con prefijo /api
+app.use('/api/auth', authRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/movimientos', movimientosRoutes);
+app.use('/api/alertas', alertasRoutes);
+app.use('/api/ventas', ventasRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
