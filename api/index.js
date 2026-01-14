@@ -350,6 +350,61 @@ app.get('/api/configuracion', async (req, res) => {
   }
 });
 
+// Endpoint para tendencia de ventas
+app.get('/api/ventas/tendencia', async (req, res) => {
+  try {
+    const { periodo, anio, mes } = req.query;
+    
+    // Datos simulados por ahora
+    let tendencia = [];
+    
+    if (periodo === 'mes') {
+      tendencia = [
+        { dia: 1, ventas: 1500000, productos: 5 },
+        { dia: 2, ventas: 2300000, productos: 8 },
+        { dia: 3, ventas: 1800000, productos: 6 },
+        { dia: 4, ventas: 3200000, productos: 12 },
+        { dia: 5, ventas: 2800000, productos: 9 },
+        { dia: 6, ventas: 3500000, productos: 13 },
+        { dia: 7, ventas: 2100000, productos: 7 },
+        { dia: 8, ventas: 2900000, productos: 10 },
+        { dia: 9, ventas: 4200000, productos: 15 },
+        { dia: 10, ventas: 3100000, productos: 11 }
+      ];
+    } else if (periodo === 'semana') {
+      tendencia = [
+        { dia: 'Lunes', ventas: 8500000, productos: 28 },
+        { dia: 'Martes', ventas: 9200000, productos: 31 },
+        { dia: 'Miércoles', ventas: 7800000, productos: 25 },
+        { dia: 'Jueves', ventas: 10500000, productos: 34 },
+        { dia: 'Viernes', ventas: 12300000, productos: 41 },
+        { dia: 'Sábado', ventas: 6700000, productos: 22 },
+        { dia: 'Domingo', ventas: 4500000, productos: 15 }
+      ];
+    } else if (periodo === 'anio') {
+      tendencia = [
+        { mes: 'Enero', ventas: 45000000, productos: 150 },
+        { mes: 'Febrero', ventas: 52000000, productos: 178 },
+        { mes: 'Marzo', ventas: 48000000, productos: 165 },
+        { mes: 'Abril', ventas: 61000000, productos: 203 },
+        { mes: 'Mayo', ventas: 58000000, productos: 192 },
+        { mes: 'Junio', ventas: 72000000, productos: 238 }
+      ];
+    }
+    
+    res.json({
+      success: true,
+      data: tendencia,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Endpoint para ventas por período
 app.get('/api/ventas/periodo', async (req, res) => {
   try {
@@ -541,7 +596,8 @@ app.get('/', (req, res) => {
       'GET /api/configuracion',
       'GET /api/ventas/periodo',
       'GET /api/ventas/metodos-pago',
-      'GET /api/ventas/top-productos'
+      'GET /api/ventas/top-productos',
+      'GET /api/ventas/tendencia'
     ],
     timestamp: new Date().toISOString()
   });
