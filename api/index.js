@@ -149,6 +149,16 @@ app.get('/api/auth/verify', verifyToken, (req, res) => {
   });
 });
 
+// Endpoint de prueba POST
+app.post('/api/test', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'POST test working',
+    body: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Ruta de prueba simple
 app.get('/api/test', (req, res) => {
   res.json({ 
@@ -255,11 +265,12 @@ app.get('/', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'API de Inventario funcionando',
-    version: '1.0.0',
+    version: '1.0.1',
     endpoints: [
       'POST /api/auth/login',
       'POST /api/auth/register',
       'GET /api/auth/verify',
+      'POST /api/test',
       '/api/health',
       '/api/dashboard/stats',
       '/api/movimientos/hoy',
