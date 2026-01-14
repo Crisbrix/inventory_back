@@ -176,33 +176,67 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { nombre, email, password, rol = 'VENDEDOR' } = req.body;
+    const { query } = require('../config/database');
+
+    // Logs para depuración
+    console.log('POST /api/auth/register - Body:', req.body);
 
     if (!nombre || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos son requeridos'
+        message: 'Nombre, email y password son requeridos'
       });
     }
 
-    // Simular registro (en producción guardar en BD)
+    // Verificar si el usuario ya existe
+    const existingUserQuery = 'SELECT id FROM usuarios WHERE correo = ?';
+    const [existingUser] = await query(existingUserQuery, [email]);
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'El correo electrónico ya está registrado'
+      });
+    }
+
+    // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    res.json({
+    // Insertar usuario en la base de datos
+    const insertQuery = `
+      INSERT INTO usuarios (nombre, correo, contrasena, rol)
+      VALUES (?, ?, ?, ?)
+    `;
+    
+    console.log('Query:', insertQuery);
+    console.log('Params:', [nombre, email, hashedPassword, rol]);
+    
+    const result = await query(insertQuery, [nombre, email, hashedPassword, rol]);
+    
+    console.log('Result:', result);
+
+    // Obtener usuario creado (sin contraseña)
+    const selectQuery = `
+      SELECT id, nombre, correo, rol, activo, fecha_creacion 
+      FROM usuarios 
+      WHERE id = ?
+    `;
+    const [usuarioCreado] = await query(selectQuery, [result.insertId]);
+    
+    // Eliminar contraseña del response
+    delete usuarioCreado.contrasena;
+    
+    res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
-      data: {
-        id: Date.now(),
-        nombre,
-        email,
-        rol
-      }
+      data: usuarioCreado
     });
 
   } catch (error) {
+    console.error('Error en POST /api/auth/register:', error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor',
-      error: error.message
+      message: error.message
     });
   }
 });
