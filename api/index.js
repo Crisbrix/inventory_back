@@ -5,6 +5,10 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
+// Middleware para parsear JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Middleware CORS para permitir el frontend
 app.use(cors({
   origin: ['https://inventory-frond.vercel.app', 'http://localhost:4200', 'http://localhost:3000'],
