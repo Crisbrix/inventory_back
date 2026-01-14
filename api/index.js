@@ -283,6 +283,73 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+// Endpoint para usuarios
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    
+    // Obtener usuarios de la base de datos
+    const usuariosQuery = `
+      SELECT id, nombre, correo, rol, activo, fecha_creacion
+      FROM usuarios
+      WHERE activo = 1
+      ORDER BY nombre
+    `;
+    
+    const usuarios = await query(usuariosQuery);
+    
+    res.json({
+      success: true,
+      data: usuarios,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Endpoint para configuración
+app.get('/api/configuracion', async (req, res) => {
+  try {
+    // Configuración simulada por ahora
+    const configuracion = {
+      empresa: {
+        nombre: 'Inventory System',
+        nit: '900.123.456-7',
+        direccion: 'Calle Principal #123',
+        telefono: '+57 1 234 5678',
+        email: 'contacto@inventory.com'
+      },
+      sistema: {
+        nombre: 'Inventory Management System',
+        version: '1.0.0',
+        moneda: 'COP',
+        idioma: 'es',
+        timezone: 'America/Bogota'
+      },
+      alertas: {
+        stock_minimo_porcentaje: 20,
+        sin_movimientos_dias: 7,
+        email_notificaciones: true
+      }
+    };
+    
+    res.json({
+      success: true,
+      data: configuracion,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Endpoint para productos
 app.get('/api/productos', async (req, res) => {
   try {
@@ -377,7 +444,9 @@ app.get('/', (req, res) => {
       '/api/dashboard/stats',
       '/api/movimientos/hoy',
       '/api/alertas/activas',
-      'GET /api/productos'
+      'GET /api/productos',
+      'GET /api/usuarios',
+      'GET /api/configuracion'
     ],
     timestamp: new Date().toISOString()
   });
