@@ -2,15 +2,29 @@ module.exports = async (req, res) => {
   try {
     console.log('=== DEBUG DATABASE CONNECTION ===');
     
-    // Importar aquí para evitar errores de carga
-    const { testConnection } = require('../config/database');
-    const dbConnected = await testConnection();
-    console.log('Database connected:', dbConnected);
+    // Test simple sin importar database
+    const mysql = require('mysql2/promise');
+    const config = {
+      host: 'gateway01.us-east-1.prod.aws.tidbcloud.com',
+      user: '1TEoM8obiKCAeP5.root',
+      password: 'fDs0REMWAHVieQO8',
+      database: 'inventary',
+      port: 4000,
+      ssl: { 
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      }
+    };
+    
+    const connection = await mysql.createConnection(config);
+    const [rows] = await connection.execute('SELECT 1 as test');
+    await connection.end();
     
     res.json({ 
       status: 'OK', 
-      message: 'Debug endpoint working',
-      database: dbConnected ? 'connected' : 'disconnected',
+      message: 'Debug endpoint working - direct connection successful',
+      database: 'connected',
+      testResult: rows,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
