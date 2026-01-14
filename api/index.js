@@ -24,9 +24,6 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Ruta simple debug sin dependencias
-app.get('/api/simple2', require('./simple2'));
-
 // Ruta health con base de datos
 app.get('/api/health', async (req, res) => {
   try {
@@ -47,12 +44,90 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Endpoint para dashboard stats
+app.get('/api/dashboard/stats', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    
+    // Stats simuladas por ahora
+    const stats = {
+      totalProductos: 150,
+      stockBajo: 12,
+      movimientosHoy: 8,
+      alertasActivas: 3
+    };
+    
+    res.json({
+      success: true,
+      data: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Endpoint para movimientos de hoy
+app.get('/api/movimientos/hoy', async (req, res) => {
+  try {
+    // Datos simulados por ahora
+    const movimientos = [
+      { id: 1, tipo: 'entrada', producto: 'Laptop Dell', cantidad: 5, hora: '09:30' },
+      { id: 2, tipo: 'salida', producto: 'Mouse Logitech', cantidad: 3, hora: '10:15' },
+      { id: 3, tipo: 'entrada', producto: 'Teclado HP', cantidad: 10, hora: '11:00' }
+    ];
+    
+    res.json({
+      success: true,
+      data: movimientos,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Endpoint para alertas activas
+app.get('/api/alertas/activas', async (req, res) => {
+  try {
+    // Datos simulados por ahora
+    const alertas = [
+      { id: 1, tipo: 'stock_bajo', producto: 'Laptop Dell', mensaje: 'Stock mínimo alcanzado', criticidad: 'alta' },
+      { id: 2, tipo: 'stock_bajo', producto: 'Mouse USB', mensaje: 'Quedan 3 unidades', criticidad: 'media' },
+      { id: 3, tipo: 'sin_movimientos', producto: 'Monitor LG', mensaje: 'Sin movimientos en 7 días', criticidad: 'baja' }
+    ];
+    
+    res.json({
+      success: true,
+      data: alertas,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Ruta raíz
 app.get('/', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'API de Inventario funcionando',
     version: '1.0.0',
+    endpoints: [
+      '/api/health',
+      '/api/dashboard/stats',
+      '/api/movimientos/hoy',
+      '/api/alertas/activas'
+    ],
     timestamp: new Date().toISOString()
   });
 });
