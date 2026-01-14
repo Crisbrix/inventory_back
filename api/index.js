@@ -24,6 +24,20 @@ app.get('/health', (req, res) => {
 
 // Importar rutas principales
 const authRoutes = require('../routes/auth');
+const productosRoutes = require('../routes/productos');
+const movimientosRoutes = require('../routes/movimientos');
+const alertasRoutes = require('../routes/alertas');
+const ventasRoutes = require('../routes/ventas');
+const usuariosRoutes = require('../routes/usuarios');
+const configuracionRoutes = require('../routes/configuracion');
+
+// Usar todas las rutas
 app.use('/auth', authRoutes);
+app.use('/productos', productosRoutes);
+app.use('/movimientos', movimientosRoutes);
+app.use('/alertas', alertasRoutes);
+app.use('/ventas', ventasRoutes);
+app.use('/usuarios', usuariosRoutes);
+app.use('/configuracion', configuracionRoutes);
 
 module.exports = (req, res) => app(req, res);
