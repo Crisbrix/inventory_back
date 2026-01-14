@@ -25,6 +25,9 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Ruta debug para base de datos
+app.get('/api/debug', require('./debug'));
+
 // Ruta health con base de datos
 app.get('/api/health', async (req, res) => {
   try {
