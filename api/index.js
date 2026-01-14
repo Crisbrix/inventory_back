@@ -37,7 +37,7 @@ const verifyToken = (req, res, next) => {
 };
 
 // Endpoint de login temporal con GET para pruebas
-app.get('/api/auth/login', (req, res) => {
+app.get('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.query;
 
@@ -48,17 +48,27 @@ app.get('/api/auth/login', (req, res) => {
       });
     }
 
-    // Usuario de prueba (simulado)
-    const testUser = {
-      id: 1,
-      nombre: 'Administrador',
-      email: 'admin@inventory.com',
-      rol: 'ADMIN',
-      contrasena: '$2a$10$YourHashedPasswordHere' // Hash de 'admin123'
-    };
+    // Importar conexión a base de datos
+    const { query } = require('../config/database');
+    
+    // Buscar usuario en la base de datos
+    const userQuery = 'SELECT * FROM usuarios WHERE correo = ? AND activo = 1';
+    const users = await query(userQuery, [email]);
+    
+    if (users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no encontrado o inactivo'
+      });
+    }
 
-    // Verificar credenciales
-    if (email !== testUser.email || password !== 'admin123') {
+    const user = users[0];
+
+    // Verificar contraseña
+    const bcrypt = require('bcryptjs');
+    const passwordMatch = await bcrypt.compare(password, user.contrasena);
+    
+    if (!passwordMatch) {
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
@@ -68,9 +78,9 @@ app.get('/api/auth/login', (req, res) => {
     // Generar token
     const token = jwt.sign(
       { 
-        id: testUser.id, 
-        email: testUser.email, 
-        rol: testUser.rol 
+        id: user.id, 
+        email: user.correo, 
+        rol: user.rol 
       },
       'tu_secreto_super_seguro_cambiar_en_produccion',
       { expiresIn: '24h' }
@@ -82,10 +92,10 @@ app.get('/api/auth/login', (req, res) => {
       data: {
         token,
         user: {
-          id: testUser.id,
-          nombre: testUser.nombre,
-          email: testUser.email,
-          rol: testUser.rol
+          id: user.id,
+          nombre: user.nombre,
+          email: user.correo,
+          rol: user.rol
         }
       }
     });
