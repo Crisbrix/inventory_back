@@ -350,6 +350,98 @@ app.get('/api/configuracion', async (req, res) => {
   }
 });
 
+// Endpoint para ventas por período
+app.get('/api/ventas/periodo', async (req, res) => {
+  try {
+    const { periodo, anio, mes } = req.query;
+    
+    // Datos simulados por ahora
+    let ventas = [];
+    
+    if (periodo === 'mes') {
+      ventas = [
+        { id: 1, fecha: '2026-01-01', total: 1500000, productos: 5 },
+        { id: 2, fecha: '2026-01-02', total: 2300000, productos: 8 },
+        { id: 3, fecha: '2026-01-03', total: 1800000, productos: 6 },
+        { id: 4, fecha: '2026-01-04', total: 3200000, productos: 12 },
+        { id: 5, fecha: '2026-01-05', total: 2800000, productos: 9 }
+      ];
+    } else if (periodo === 'semana') {
+      ventas = [
+        { id: 1, fecha: '2026-01-13', total: 8500000, productos: 28 },
+        { id: 2, fecha: '2026-01-14', total: 9200000, productos: 31 }
+      ];
+    } else if (periodo === 'dia') {
+      ventas = [
+        { id: 1, hora: '09:00', total: 1200000, productos: 4 },
+        { id: 2, hora: '11:00', total: 2300000, productos: 7 },
+        { id: 3, hora: '14:00', total: 1800000, productos: 6 },
+        { id: 4, hora: '16:00', total: 3400000, productos: 11 }
+      ];
+    }
+    
+    res.json({
+      success: true,
+      data: ventas,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Endpoint para métodos de pago
+app.get('/api/ventas/metodos-pago', async (req, res) => {
+  try {
+    // Datos simulados por ahora
+    const metodosPago = [
+      { metodo: 'Efectivo', total: 15000000, porcentaje: 45, cantidad: 45 },
+      { metodo: 'Nequi', total: 8500000, porcentaje: 25, cantidad: 28 },
+      { metodo: 'Tarjeta Crédito', total: 6800000, porcentaje: 20, cantidad: 15 },
+      { metodo: 'Transferencia', total: 3300000, porcentaje: 10, cantidad: 8 }
+    ];
+    
+    res.json({
+      success: true,
+      data: metodosPago,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Endpoint para top productos
+app.get('/api/ventas/top-productos', async (req, res) => {
+  try {
+    // Datos simulados por ahora
+    const topProductos = [
+      { id: 1, nombre: 'Jean Clase A', ventas: 25, total: 22500000, stock: 10 },
+      { id: 2, nombre: 'Camiseta Básica', ventas: 18, total: 9000000, stock: 25 },
+      { id: 3, nombre: 'Pantalón Cargo', ventas: 15, total: 13500000, stock: 8 },
+      { id: 4, nombre: 'Chaqueta Deportiva', ventas: 12, total: 18000000, stock: 5 },
+      { id: 5, nombre: 'Zapatillas Running', ventas: 10, total: 15000000, stock: 3 }
+    ];
+    
+    res.json({
+      success: true,
+      data: topProductos,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Endpoint para productos
 app.get('/api/productos', async (req, res) => {
   try {
@@ -446,7 +538,10 @@ app.get('/', (req, res) => {
       '/api/alertas/activas',
       'GET /api/productos',
       'GET /api/usuarios',
-      'GET /api/configuracion'
+      'GET /api/configuracion',
+      'GET /api/ventas/periodo',
+      'GET /api/ventas/metodos-pago',
+      'GET /api/ventas/top-productos'
     ],
     timestamp: new Date().toISOString()
   });
