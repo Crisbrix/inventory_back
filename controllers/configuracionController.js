@@ -1,10 +1,9 @@
-const { testConnection } = require('../config/database');
+const { pool } = require('../config/database');
 
 // Obtener toda la configuración del sistema
 const getAllConfig = async (req, res) => {
   try {
-    const db = await testConnection();
-    const [rows] = await db.execute(`
+    const [rows] = await pool.execute(`
       SELECT clave, valor, descripcion, fecha_actualizacion
       FROM configuracion_sistema 
       ORDER BY clave
@@ -39,8 +38,7 @@ const getAllConfig = async (req, res) => {
 const getConfigByKey = async (req, res) => {
   try {
     const { clave } = req.params;
-    const db = await testConnection();
-    const [rows] = await db.execute(`
+    const [rows] = await pool.execute(`
       SELECT clave, valor, descripcion, fecha_actualizacion
       FROM configuracion_sistema 
       WHERE clave = ?
@@ -80,13 +78,12 @@ const updateConfig = async (req, res) => {
       });
     }
     
-    const db = await testConnection();
     const actualizaciones = [];
     
     // Actualizar cada configuración
     for (const [clave, valor] of Object.entries(configuraciones)) {
       try {
-        await db.execute(`
+        await pool.execute(`
           UPDATE configuracion_sistema 
           SET valor = ? 
           WHERE clave = ?
@@ -126,17 +123,15 @@ const updateSingleConfig = async (req, res) => {
       });
     }
     
-    const db = await testConnection();
-    
     // Verificar si la configuración existe
-    const [existing] = await db.execute(
+    const [existing] = await pool.execute(
       'SELECT id FROM configuracion_sistema WHERE clave = ?',
       [clave]
     );
     
     if (existing.length === 0) {
       // Crear nueva configuración si no existe
-      await db.execute(`
+      await pool.execute(`
         INSERT INTO configuracion_sistema (clave, valor, descripcion)
         VALUES (?, ?, ?)
       `, [clave, typeof valor === 'object' ? JSON.stringify(valor) : valor, descripcion || '']);
@@ -152,7 +147,7 @@ const updateSingleConfig = async (req, res) => {
       
       updateValues.push(clave);
       
-      await db.execute(`
+      await pool.execute(`
         UPDATE configuracion_sistema 
         SET ${updateFields.join(', ')}
         WHERE clave = ?
@@ -160,7 +155,7 @@ const updateSingleConfig = async (req, res) => {
     }
     
     // Obtener configuración actualizada
-    const [updated] = await db.execute(`
+    const [updated] = await pool.execute(`
       SELECT clave, valor, descripcion, fecha_actualizacion
       FROM configuracion_sistema 
       WHERE clave = ?
@@ -184,8 +179,6 @@ const updateSingleConfig = async (req, res) => {
 // Resetear configuración a valores por defecto
 const resetConfig = async (req, res) => {
   try {
-    const db = await testConnection();
-    
     // Valores por defecto
     const defaultConfig = {
       'nombre_empresa': 'Inventory System',
@@ -204,7 +197,7 @@ const resetConfig = async (req, res) => {
     
     for (const [clave, valor] of Object.entries(defaultConfig)) {
       try {
-        await db.execute(`
+        await pool.execute(`
           UPDATE configuracion_sistema 
           SET valor = ? 
           WHERE clave = ?

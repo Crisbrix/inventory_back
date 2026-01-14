@@ -1,10 +1,9 @@
-const { testConnection } = require('../config/database');
+const { pool } = require('../config/database');
 
 // Obtener todos los usuarios
 const getAllUsers = async (req, res) => {
   try {
-    const db = await testConnection();
-    const [rows] = await db.execute(`
+    const [rows] = await pool.execute(`
       SELECT id, nombre, correo, rol, activo, fecha_creacion
       FROM usuarios 
       ORDER BY fecha_creacion DESC
@@ -29,8 +28,7 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const db = await testConnection();
-    const [rows] = await db.execute(`
+    const [rows] = await pool.execute(`
       SELECT id, nombre, correo, rol, activo, fecha_creacion
       FROM usuarios 
       WHERE id = ?
@@ -71,10 +69,8 @@ const createUser = async (req, res) => {
       });
     }
     
-    const db = await testConnection();
-    
     // Verificar si el correo ya existe
-    const [existingUser] = await db.execute(
+    const [existingUser] = await pool.execute(
       'SELECT id FROM usuarios WHERE correo = ?',
       [correo]
     );
@@ -90,13 +86,13 @@ const createUser = async (req, res) => {
     const passwordHash = contrasena; // TODO: Implementar bcrypt
     
     // Insertar usuario
-    const [result] = await db.execute(`
+    const [result] = await pool.execute(`
       INSERT INTO usuarios (nombre, correo, contrasena, rol)
       VALUES (?, ?, ?, ?)
     `, [nombre, correo, passwordHash, rol]);
     
     // Obtener usuario creado
-    const [newUser] = await db.execute(`
+    const [newUser] = await pool.execute(`
       SELECT id, nombre, correo, rol, activo, fecha_creacion
       FROM usuarios 
       WHERE id = ?
@@ -123,10 +119,8 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const { nombre, correo, rol, activo } = req.body;
     
-    const db = await testConnection();
-    
     // Verificar si usuario existe
-    const [existingUser] = await db.execute(
+    const [existingUser] = await pool.execute(
       'SELECT id FROM usuarios WHERE id = ?',
       [id]
     );
@@ -140,7 +134,7 @@ const updateUser = async (req, res) => {
     
     // Verificar si correo ya existe (excluyendo el usuario actual)
     if (correo) {
-      const [duplicateUser] = await db.execute(
+      const [duplicateUser] = await pool.execute(
         'SELECT id FROM usuarios WHERE correo = ? AND id != ?',
         [correo, id]
       );
@@ -154,14 +148,14 @@ const updateUser = async (req, res) => {
     }
     
     // Actualizar usuario
-    await db.execute(`
+    await pool.execute(`
       UPDATE usuarios 
       SET nombre = ?, correo = ?, rol = ?, activo = ?
       WHERE id = ?
     `, [nombre, correo, rol, activo, id]);
     
     // Obtener usuario actualizado
-    const [updatedUser] = await db.execute(`
+    const [updatedUser] = await pool.execute(`
       SELECT id, nombre, correo, rol, activo, fecha_creacion
       FROM usuarios 
       WHERE id = ?
@@ -187,10 +181,8 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const db = await testConnection();
-    
     // Verificar si usuario existe
-    const [existingUser] = await db.execute(
+    const [existingUser] = await pool.execute(
       'SELECT id FROM usuarios WHERE id = ?',
       [id]
     );
@@ -203,7 +195,7 @@ const deleteUser = async (req, res) => {
     }
     
     // Desactivar usuario (soft delete)
-    await db.execute(
+    await pool.execute(
       'UPDATE usuarios SET activo = FALSE WHERE id = ?',
       [id]
     );
@@ -227,10 +219,8 @@ const toggleUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const db = await testConnection();
-    
     // Obtener estado actual
-    const [user] = await db.execute(
+    const [user] = await pool.execute(
       'SELECT activo FROM usuarios WHERE id = ?',
       [id]
     );
@@ -244,7 +234,7 @@ const toggleUserStatus = async (req, res) => {
     
     // Cambiar estado
     const newStatus = !user[0].activo;
-    await db.execute(
+    await pool.execute(
       'UPDATE usuarios SET activo = ? WHERE id = ?',
       [newStatus, id]
     );
