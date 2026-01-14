@@ -1,1 +1,1 @@
-{"version": 2, "builds": [{"src": "api/index.js", "use": "@vercel/node"}], "routes": [{"src": "/api/(.*)", "dest": "/api/index.js"}]}
+{"version": 2, "builds": [{"src": "api/index.js", "use": "@vercel/node"}, {"src": "api/login.js", "use": "@vercel/node"}], "routes": [{"src": "/api/auth/login", "dest": "/api/login.js"}, {"src": "/api/(.*)", "dest": "/api/index.js"}]}
