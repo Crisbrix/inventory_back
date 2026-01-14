@@ -1,8 +1,9 @@
-const { testConnection } = require('../config/database');
-
 module.exports = async (req, res) => {
   try {
     console.log('=== DEBUG DATABASE CONNECTION ===');
+    
+    // Importar aquí para evitar errores de carga
+    const { testConnection } = require('../config/database');
     const dbConnected = await testConnection();
     console.log('Database connected:', dbConnected);
     
