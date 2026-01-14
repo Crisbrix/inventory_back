@@ -5,11 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
-// Middlewares básicos
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// CORS configurado para frontend
+// Middleware CORS para permitir el frontend
 app.use(cors({
   origin: ['https://inventory-frond.vercel.app', 'http://localhost:4200', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
