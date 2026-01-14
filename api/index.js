@@ -304,27 +304,60 @@ app.put('/api/productos/:id', async (req, res) => {
     console.log('PUT /api/productos/:id - ID:', id);
     console.log('PUT /api/productos/:id - Body:', req.body);
     
-    // Validar que todos los campos necesarios existan
-    if (!nombre || !codigo || !precio === undefined || !stock_actual === undefined || !stock_minimo === undefined) {
+    // Validar campos requeridos
+    if (!nombre || !precio === undefined || !stock_actual === undefined || !stock_minimo === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos son requeridos'
+        message: 'Nombre, precio, stock_actual y stock_minimo son requeridos'
       });
     }
     
-    // Actualizar producto en la base de datos
+    // Construir query dinámicamente solo con los campos proporcionados
+    let updateFields = [];
+    let updateValues = [];
+    
+    if (nombre !== undefined) {
+      updateFields.push('nombre = ?');
+      updateValues.push(nombre);
+    }
+    if (codigo !== undefined) {
+      updateFields.push('codigo = ?');
+      updateValues.push(codigo);
+    }
+    if (descripcion !== undefined) {
+      updateFields.push('descripcion = ?');
+      updateValues.push(descripcion);
+    }
+    if (precio !== undefined) {
+      updateFields.push('precio = ?');
+      updateValues.push(precio);
+    }
+    if (stock_actual !== undefined) {
+      updateFields.push('stock_actual = ?');
+      updateValues.push(stock_actual);
+    }
+    if (stock_minimo !== undefined) {
+      updateFields.push('stock_minimo = ?');
+      updateValues.push(stock_minimo);
+    }
+    if (activo !== undefined) {
+      updateFields.push('activo = ?');
+      updateValues.push(activo);
+    }
+    
+    updateFields.push('fecha_actualizacion = CURRENT_TIMESTAMP');
+    updateValues.push(id);
+    
     const updateQuery = `
       UPDATE productos 
-      SET nombre = ?, codigo = ?, descripcion = ?, precio = ?, 
-          stock_actual = ?, stock_minimo = ?, activo = ?, 
-          fecha_actualizacion = CURRENT_TIMESTAMP
+      SET ${updateFields.join(', ')}
       WHERE id = ?
     `;
     
     console.log('Query:', updateQuery);
-    console.log('Params:', [nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo, id]);
+    console.log('Params:', updateValues);
     
-    const result = await query(updateQuery, [nombre, codigo, descripcion, precio, stock_actual, stock_minimo, activo, id]);
+    const result = await query(updateQuery, updateValues);
     
     console.log('Result:', result);
     
