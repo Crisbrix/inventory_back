@@ -25,6 +25,9 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Ruta simple debug sin dependencias
+app.get('/api/simple2', require('./simple2'));
+
 // Ruta debug para base de datos
 app.get('/api/debug', require('./debug'));
 
