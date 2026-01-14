@@ -7,13 +7,31 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares
 const corsOptions = {
-  origin: ['https://inventory-frond.vercel.app', 'http://localhost:4200', 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://inventory-frond.vercel.app',
+      'http://localhost:4200',
+      'http://localhost:3000',
+      'https://inventory-back-five.vercel.app'
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.options('/api/auth/login', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -80,10 +98,11 @@ async function startServer() {
   });
 }
 
+// Para Vercel - no iniciar servidor automáticamente
 // Solo iniciar el servidor cuando se ejecute directamente (entorno local)
 if (require.main === module) {
   startServer();
 }
 
 // Exportar para Vercel
-module.exports = app;
+module.exports = (req, res) => app(req, res);
