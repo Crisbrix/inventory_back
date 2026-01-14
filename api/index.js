@@ -27,6 +27,26 @@ app.get('/api/test', (req, res) => {
 // Ruta simple debug sin dependencias
 app.get('/api/simple2', require('./simple2'));
 
+// Ruta health con base de datos
+app.get('/api/health', async (req, res) => {
+  try {
+    // Importar aquí para evitar errores de carga
+    const { testConnection } = require('../config/database');
+    const dbConnected = await testConnection();
+    res.json({ 
+      status: 'OK', 
+      message: 'Servidor funcionando correctamente',
+      database: dbConnected ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error al verificar base de datos',
+      message: error.message
+    });
+  }
+});
+
 // Ruta raíz
 app.get('/', (req, res) => {
   res.json({ 
