@@ -393,13 +393,32 @@ app.post('/api/productos', async (req, res) => {
     const { nombre, codigo, descripcion, precio, stock_actual, stock_minimo } = req.body;
     const { query } = require('../config/database');
     
+    // Logs para depuración
+    console.log('POST /api/productos - Body:', req.body);
+    
+    // Validar campos requeridos
+    if (!nombre || !precio === undefined || !stock_actual === undefined || !stock_minimo === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nombre, precio, stock_actual y stock_minimo son requeridos'
+      });
+    }
+    
+    // Generar código automático si no se proporciona
+    const codigoFinal = codigo || `PROD-${Date.now()}`;
+    
     // Insertar nuevo producto
     const insertQuery = `
       INSERT INTO productos (nombre, codigo, descripcion, precio, stock_actual, stock_minimo)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
     
-    const result = await query(insertQuery, [nombre, codigo, descripcion, precio, stock_actual, stock_minimo]);
+    console.log('Query:', insertQuery);
+    console.log('Params:', [nombre, codigoFinal, descripcion, precio, stock_actual, stock_minimo]);
+    
+    const result = await query(insertQuery, [nombre, codigoFinal, descripcion, precio, stock_actual, stock_minimo]);
+    
+    console.log('Result:', result);
     
     // Obtener producto creado
     const selectQuery = 'SELECT * FROM productos WHERE id = ?';
@@ -412,6 +431,7 @@ app.post('/api/productos', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('Error en POST /api/productos:', error);
     res.status(500).json({
       success: false,
       message: error.message
