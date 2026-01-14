@@ -184,24 +184,48 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Logs para depuración
     console.log('POST /api/auth/register - Body:', req.body);
+    console.log('POST /api/auth/register - Headers:', req.headers);
 
-    if (!nombre || !email || !password) {
+    // Validación más detallada
+    if (!nombre || typeof nombre !== 'string' || nombre.trim() === '') {
+      console.log('Error: Nombre inválido', nombre);
       return res.status(400).json({
         success: false,
-        message: 'Nombre, email y password son requeridos'
+        message: 'Nombre es requerido y debe ser un texto válido'
       });
     }
+
+    if (!email || typeof email !== 'string' || email.trim() === '') {
+      console.log('Error: Email inválido', email);
+      return res.status(400).json({
+        success: false,
+        message: 'Email es requerido y debe ser un texto válido'
+      });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      console.log('Error: Password inválido', password);
+      return res.status(400).json({
+        success: false,
+        message: 'Password es requerido y debe tener al menos 6 caracteres'
+      });
+    }
+
+    console.log('Validación pasada, verificando usuario existente...');
 
     // Verificar si el usuario ya existe (usando campo correo de la BD)
     const existingUserQuery = 'SELECT id FROM usuarios WHERE correo = ?';
     const [existingUser] = await query(existingUserQuery, [email]);
 
     if (existingUser) {
+      console.log('Error: Usuario ya existe', email);
       return res.status(400).json({
         success: false,
         message: 'El correo electrónico ya está registrado'
       });
     }
+
+    console.log('Usuario no existe, procediendo con registro...');
 
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -230,6 +254,8 @@ app.post('/api/auth/register', async (req, res) => {
     // Eliminar contraseña del response
     delete usuarioCreado.contrasena;
     
+    console.log('Usuario creado exitosamente:', usuarioCreado);
+
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
@@ -238,6 +264,7 @@ app.post('/api/auth/register', async (req, res) => {
 
   } catch (error) {
     console.error('Error en POST /api/auth/register:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({
       success: false,
       message: error.message
