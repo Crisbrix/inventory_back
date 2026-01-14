@@ -2,8 +2,6 @@ require('dotenv').config();
 
 const mysql = require('mysql2/promise');
 
-const useSSL = (process.env.DB_SSL || 'true').toString().toLowerCase() === 'true';
-
 const dbConfig = {
   host: process.env.DB_HOST || 'gateway01.us-east-1.prod.aws.tidbcloud.com',
   user: process.env.DB_USER || '1TEoM8obiKCAeP5.root',
@@ -13,10 +11,10 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  ssl: useSSL ? { 
+  ssl: { 
     rejectUnauthorized: false,
     minVersion: 'TLSv1.2'
-  } : undefined
+  }
 };
 
 // Variable para almacenar el pool (lazy initialization)
