@@ -159,14 +159,12 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({
       success: true,
       message: 'Login exitoso (GET temporal)',
-      data: {
-        token,
-        user: {
-          id: testUser.id,
-          nombre: testUser.nombre,
-          email: testUser.email,
-          rol: testUser.rol
-        }
+      token: token,  // ← Token directamente en el root
+      user: {
+        id: testUser.id,
+        nombre: testUser.nombre,
+        email: testUser.email,
+        rol: testUser.rol
       }
     });
 
