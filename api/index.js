@@ -283,6 +283,39 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+// Endpoint para productos
+app.get('/api/productos', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    
+    // Obtener productos de la base de datos
+    const productosQuery = `
+      SELECT p.*, 
+             CASE 
+               WHEN p.stock_actual <= p.stock_minimo THEN 'CRITICO'
+               WHEN p.stock_actual <= p.stock_minimo * 1.5 THEN 'BAJO'
+               ELSE 'NORMAL'
+             END as estado_stock
+      FROM productos p
+      WHERE p.activo = 1
+      ORDER BY p.nombre
+    `;
+    
+    const productos = await query(productosQuery);
+    
+    res.json({
+      success: true,
+      data: productos,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Endpoint para movimientos de hoy
 app.get('/api/movimientos/hoy', async (req, res) => {
   try {
@@ -343,7 +376,8 @@ app.get('/', (req, res) => {
       '/api/health',
       '/api/dashboard/stats',
       '/api/movimientos/hoy',
-      '/api/alertas/activas'
+      '/api/alertas/activas',
+      'GET /api/productos'
     ],
     timestamp: new Date().toISOString()
   });
