@@ -50,6 +50,15 @@ app.use('/movimientos', movimientosRoutes);
 app.use('/alertas', alertasRoutes);
 app.use('/ventas', ventasRoutes);
 
+// Ruta de prueba simple (sin base de datos)
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Simple test endpoint working',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Ruta de prueba
 app.get('/api/health', async (req, res) => {
   const dbConnected = await testConnection();
