@@ -13,6 +13,16 @@ app.use(cors({
 
 app.use(express.json());
 
+// Ruta raíz para Vercel
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'API funcionando correctamente',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Ruta de prueba
 app.get('/health', (req, res) => {
   res.json({ 
